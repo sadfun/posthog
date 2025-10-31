@@ -16393,7 +16393,9 @@
                 "RetentionQuery",
                 "PathsQuery",
                 "StickinessQuery",
-                "LifecycleQuery"
+                "LifecycleQuery",
+                "WebStatsTableQuery",
+                "WebOverviewQuery"
             ],
             "type": "string"
         },
@@ -16419,6 +16421,12 @@
                 },
                 {
                     "$ref": "#/definitions/LifecycleQuery"
+                },
+                {
+                    "$ref": "#/definitions/WebStatsTableQuery"
+                },
+                {
+                    "$ref": "#/definitions/WebOverviewQuery"
                 }
             ],
             "required": ["kind"],
