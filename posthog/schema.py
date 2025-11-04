@@ -12336,6 +12336,10 @@ class WebExternalClicksTableQuery(BaseModel):
     doPathCleaning: Optional[bool] = None
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["WebExternalClicksTableQuery"] = "WebExternalClicksTableQuery"
     limit: Optional[int] = None
     modifiers: Optional[HogQLQueryModifiers] = Field(
@@ -12361,6 +12365,10 @@ class WebGoalsQuery(BaseModel):
     doPathCleaning: Optional[bool] = None
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["WebGoalsQuery"] = "WebGoalsQuery"
     limit: Optional[int] = None
     modifiers: Optional[HogQLQueryModifiers] = Field(
@@ -12385,6 +12393,10 @@ class WebOverviewQuery(BaseModel):
     doPathCleaning: Optional[bool] = None
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["WebOverviewQuery"] = "WebOverviewQuery"
     modifiers: Optional[HogQLQueryModifiers] = Field(
         default=None, description="Modifiers used when performing the query"
@@ -12408,6 +12420,10 @@ class WebPageURLSearchQuery(BaseModel):
     doPathCleaning: Optional[bool] = None
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["WebPageURLSearchQuery"] = "WebPageURLSearchQuery"
     limit: Optional[int] = None
     modifiers: Optional[HogQLQueryModifiers] = Field(
@@ -12437,6 +12453,10 @@ class WebStatsTableQuery(BaseModel):
     includeBounceRate: Optional[bool] = None
     includeRevenue: Optional[bool] = None
     includeScrollDepth: Optional[bool] = None
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["WebStatsTableQuery"] = "WebStatsTableQuery"
     limit: Optional[int] = None
     modifiers: Optional[HogQLQueryModifiers] = Field(
@@ -13347,6 +13367,10 @@ class MarketingAnalyticsAggregatedQuery(BaseModel):
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
     integrationFilter: Optional[IntegrationFilter] = Field(default=None, description="Filter by integration IDs")
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["MarketingAnalyticsAggregatedQuery"] = "MarketingAnalyticsAggregatedQuery"
     modifiers: Optional[HogQLQueryModifiers] = Field(
         default=None, description="Modifiers used when performing the query"
@@ -13379,6 +13403,10 @@ class MarketingAnalyticsTableQuery(BaseModel):
     )
     includeRevenue: Optional[bool] = None
     integrationFilter: Optional[IntegrationFilter] = Field(default=None, description="Filter by integration type")
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["MarketingAnalyticsTableQuery"] = "MarketingAnalyticsTableQuery"
     limit: Optional[int] = Field(default=None, description="Number of rows to return")
     modifiers: Optional[HogQLQueryModifiers] = Field(
@@ -13785,7 +13813,9 @@ class WebTrendsQuery(BaseModel):
     doPathCleaning: Optional[bool] = None
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
-    interval: IntervalType
+    interval: IntervalType = Field(
+        ..., description="For Product Analytics UI compatibility only - not used in Web Analytics query execution"
+    )
     kind: Literal["WebTrendsQuery"] = "WebTrendsQuery"
     limit: Optional[int] = None
     metrics: list[WebTrendsMetric]
@@ -13812,6 +13842,10 @@ class WebVitalsPathBreakdownQuery(BaseModel):
     doPathCleaning: Optional[bool] = None
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["WebVitalsPathBreakdownQuery"] = "WebVitalsPathBreakdownQuery"
     metric: WebVitalsMetric
     modifiers: Optional[HogQLQueryModifiers] = Field(
@@ -15562,6 +15596,10 @@ class WebVitalsQuery(BaseModel):
     doPathCleaning: Optional[bool] = None
     filterTestAccounts: Optional[bool] = None
     includeRevenue: Optional[bool] = None
+    interval: Optional[IntervalType] = Field(
+        default=None,
+        description="For Product Analytics UI compatibility only - not used in Web Analytics query execution",
+    )
     kind: Literal["WebVitalsQuery"] = "WebVitalsQuery"
     modifiers: Optional[HogQLQueryModifiers] = Field(
         default=None, description="Modifiers used when performing the query"
