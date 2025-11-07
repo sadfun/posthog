@@ -1386,11 +1386,6 @@ class ExperimentMetricType(StrEnum):
     RETENTION = "retention"
 
 
-class IncompleteRetentionHandling(StrEnum):
-    EXCLUDE = "exclude"
-    INCLUDE = "include"
-
-
 class StartHandling(StrEnum):
     FIRST_SEEN = "first_seen"
     LAST_SEEN = "last_seen"
@@ -13220,7 +13215,6 @@ class ExperimentRetentionMetric(BaseModel):
     conversion_window_unit: Optional[FunnelConversionWindowTimeUnit] = None
     fingerprint: Optional[str] = None
     goal: Optional[ExperimentMetricGoal] = None
-    incomplete_retention_handling: IncompleteRetentionHandling
     isSharedMetric: Optional[bool] = None
     kind: Literal["ExperimentMetric"] = "ExperimentMetric"
     metric_type: Literal["retention"] = "retention"
