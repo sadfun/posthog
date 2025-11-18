@@ -5709,6 +5709,10 @@ class TrendsFilter(BaseModel):
     showTrendLines: Optional[bool] = None
     showValuesOnSeries: Optional[bool] = False
     smoothingIntervals: Optional[int] = 1
+    sessionLevelAggregation: Optional[bool] = Field(
+        default=False,
+        description="When using session properties as math_property, aggregate at session level instead of event level. Groups by session_id first, then applies math aggregation.",
+    )
     yAxisScaleType: Optional[YAxisScaleType] = YAxisScaleType.LINEAR
 
 

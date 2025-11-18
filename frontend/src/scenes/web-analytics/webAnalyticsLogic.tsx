@@ -971,6 +971,26 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                     custom_name: 'Sessions',
                 }
 
+                const sessionDurationSeries: EventsNode = {
+                    event: featureFlags[FEATURE_FLAGS.WEB_ANALYTICS_FOR_MOBILE] ? '$screen' : '$pageview',
+                    kind: NodeKind.EventsNode,
+                    math: PropertyMathType.Average,
+                    math_property: '$session_duration',
+                    math_property_type: 'session_properties',
+                    name: 'Session duration',
+                    custom_name: 'Average session duration',
+                }
+
+                const bounceRateSeries: EventsNode = {
+                    event: featureFlags[FEATURE_FLAGS.WEB_ANALYTICS_FOR_MOBILE] ? '$screen' : '$pageview',
+                    kind: NodeKind.EventsNode,
+                    math: PropertyMathType.Average,
+                    math_property: '$is_bounce',
+                    math_property_type: 'session_properties',
+                    name: 'Bounce rate',
+                    custom_name: 'Average bounce rate',
+                }
+
                 const uniqueConversionsSeries: ActionsNode | EventsNode | undefined = !conversionGoal
                     ? undefined
                     : 'actionId' in conversionGoal
@@ -1286,6 +1306,27 @@ export const webAnalyticsLogic = kea<webAnalyticsLogicType>([
                                     ? createGraphsTrendsTab(GraphsTab.NUM_SESSION, 'Unique sessions', 'Sessions', [
                                           sessionsSeries,
                                       ])
+                                    : null,
+                                !conversionGoal
+                                    ? createGraphsTrendsTab(
+                                          GraphsTab.SESSION_DURATION,
+                                          'Average session duration',
+                                          'Session duration',
+                                          [sessionDurationSeries],
+                                          { sessionLevelAggregation: true }
+                                      )
+                                    : null,
+                                !conversionGoal
+                                    ? createGraphsTrendsTab(
+                                          GraphsTab.BOUNCE_RATE,
+                                          'Average bounce rate',
+                                          'Bounce rate',
+                                          [bounceRateSeries],
+                                          {
+                                              sessionLevelAggregation: true,
+                                              aggregationAxisFormat: 'percentage_scaled',
+                                          }
+                                      )
                                     : null,
                                 !conversionGoal && revenueEventsSeries?.length
                                     ? createGraphsTrendsTab(
