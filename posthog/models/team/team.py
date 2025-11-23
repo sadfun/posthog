@@ -36,6 +36,7 @@ from posthog.models.utils import (
     mask_key_value,
     sane_repr,
     validate_rate_limit,
+    validate_sdk_config,
 )
 from posthog.rbac.decorators import field_access_control
 from posthog.session_recordings.models.session_recording_playlist import SessionRecordingPlaylist
@@ -447,6 +448,8 @@ class Team(UUIDTClassicModel):
     # likely doesn't deserve a dedicated column. Can be used for things like settings and overrides
     # during feature releases.
     extra_settings = models.JSONField(null=True, blank=True)
+
+    sdk_config = models.JSONField(null=True, blank=True, validators=[validate_sdk_config])
 
     # Environment-level default HogQL query modifiers
     modifiers = models.JSONField(null=True, blank=True)

@@ -1,5 +1,9 @@
 from posthog.test.base import BaseTest
 
+from django.core.exceptions import ValidationError
+
+from parameterized import parameterized
+
 from posthog.models.organization import OrganizationMembership
 from posthog.models.user import User
 
@@ -167,3 +171,26 @@ class TestTeam(BaseTest):
 
         # Both users should have access
         assert sorted(all_user_with_access_ids) == sorted([self.user.id, member_user.id])
+
+    @parameterized.expand(
+        [
+            ("null", None, None, False),
+            (
+                "valid_dict",
+                {"key": "value", "nested": {"foo": "bar"}},
+                {"key": "value", "nested": {"foo": "bar"}},
+                False,
+            ),
+            ("list_raises_error", ["item1", "item2"], None, True),
+        ]
+    )
+    def test_sdk_config_validation(self, _name, input_value, expected_value, should_raise):
+        self.team.sdk_config = input_value
+
+        if should_raise:
+            with self.assertRaises(ValidationError):
+                self.team.full_clean()
+        else:
+            self.team.save()
+            self.team.refresh_from_db()
+            assert self.team.sdk_config == expected_value
