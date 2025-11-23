@@ -175,13 +175,16 @@ class TestTeam(BaseTest):
     @parameterized.expand(
         [
             ("null", None, None, False),
+            ("empty_dict", {}, {}, False),
             (
-                "valid_dict",
-                {"key": "value", "nested": {"foo": "bar"}},
-                {"key": "value", "nested": {"foo": "bar"}},
+                "valid_recorder_script",
+                {"recorder_script": "https://example.com/recorder.js"},
+                {"recorder_script": "https://example.com/recorder.js"},
                 False,
             ),
             ("list_raises_error", ["item1", "item2"], None, True),
+            ("recorder_script_wrong_type", {"recorder_script": 123}, None, True),
+            ("unknown_key", {"unknown_key": "value"}, None, True),
         ]
     )
     def test_sdk_config_validation(self, _name, input_value, expected_value, should_raise):

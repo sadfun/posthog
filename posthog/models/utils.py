@@ -20,6 +20,8 @@ from django.db.models import Q, UniqueConstraint
 from django.db.models.constraints import BaseConstraint
 from django.utils.text import slugify
 
+import pydantic
+
 from posthog.hogql import ast
 
 from posthog.constants import MAX_SLUG_LENGTH
@@ -437,11 +439,26 @@ def validate_rate_limit(value):
 
 
 def validate_sdk_config(value):
-    if value is not None and not isinstance(value, dict):
+    if value is None:
+        return
+
+    if not isinstance(value, dict):
         raise ValidationError(
             "sdk_config must be a JSON object (dict), not %(type)s.",
             params={"type": type(value).__name__},
         )
+
+    from posthog.schema import SdkConfig
+
+    try:
+        SdkConfig.model_validate(value)
+    except pydantic.ValidationError as e:
+        errors = []
+        for error in e.errors():
+            field = ".".join(str(loc) for loc in error["loc"])
+            msg = error["msg"]
+            errors.append(f"{field}: {msg}")
+        raise ValidationError("sdk_config validation failed: " + "; ".join(errors))
 
 
 class RootTeamQuerySet(models.QuerySet):
