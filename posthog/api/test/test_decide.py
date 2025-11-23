@@ -556,78 +556,20 @@ class TestDecide(BaseTest, QueryMatchingTest):
             [
                 "defaults to none",
                 None,
-                None,
                 {"scriptConfig": None},
-                False,
             ],
             [
-                "must have allowlist",
-                "new-recorder",
-                None,
-                {"scriptConfig": None},
-                False,
-            ],
-            [
-                "ignores empty allowlist",
-                "new-recorder",
-                [],
-                {"scriptConfig": None},
-                False,
-            ],
-            [
-                "wild card works",
-                "new-recorder",
-                ["*"],
-                {"scriptConfig": {"script": "new-recorder"}},
-                False,
-            ],
-            [
-                "can have wild card and team id",
-                "new-recorder",
-                ["*"],
-                {"scriptConfig": {"script": "new-recorder"}},
-                True,
-            ],
-            [
-                "allow list can exclude",
-                "new-recorder",
-                ["9999", "9998"],
-                {"scriptConfig": None},
-                False,
-            ],
-            [
-                "allow list can include",
-                "new-recorder",
-                ["9999", "9998"],
-                {"scriptConfig": {"script": "new-recorder"}},
-                True,
-            ],
-            [
-                "sdk_config overrides global setting",
-                "new-recorder",
-                ["*"],
-                {"scriptConfig": {"script": "team-recorder"}},
-                False,
+                "sdk_config with recorder_script",
                 {"recorder_script": "team-recorder"},
-            ],
-            [
-                "sdk_config bypasses allowlist",
-                "new-recorder",
-                [],
                 {"scriptConfig": {"script": "team-recorder"}},
-                False,
-                {"recorder_script": "team-recorder"},
             ],
         ]
     )
     def test_session_recording_script_config(
         self,
         _name: str,
-        rrweb_script_name: str | None,
-        team_allow_list: list[str] | None,
+        sdk_config: dict | None,
         expected: dict,
-        include_team_in_allowlist: bool,
-        sdk_config: dict | None = None,
     ) -> None:
         from django.core.cache import cache
 
@@ -646,16 +588,9 @@ class TestDecide(BaseTest, QueryMatchingTest):
 
         set_team_in_cache(self.team.api_token, self.team)
 
-        if team_allow_list and include_team_in_allowlist:
-            team_allow_list.append(f"{self.team.id}")
-
-        with self.settings(
-            SESSION_REPLAY_RRWEB_SCRIPT=rrweb_script_name,
-            SESSION_REPLAY_RRWEB_SCRIPT_ALLOWED_TEAMS=team_allow_list or [],
-        ):
-            response = self._post_decide(api_version=3)
-            assert response.status_code == 200
-            assert response.json()["sessionRecording"] == make_session_recording_decide_response(expected)
+        response = self._post_decide(api_version=3)
+        assert response.status_code == 200
+        assert response.json()["sessionRecording"] == make_session_recording_decide_response(expected)
 
     def test_exception_autocapture_opt_in(self, *args):
         # :TRICKY: Test for regression around caching
