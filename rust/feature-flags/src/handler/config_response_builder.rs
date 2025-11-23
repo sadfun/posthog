@@ -272,6 +272,7 @@ mod tests {
             session_recording_masking_config: None,
             session_replay_config: None,
             survey_config: None,
+            sdk_config: None,
             session_recording_url_trigger_config: None,
             session_recording_url_blocklist_config: None,
             session_recording_event_trigger_config: None,

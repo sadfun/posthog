@@ -436,6 +436,14 @@ def validate_rate_limit(value):
         )
 
 
+def validate_sdk_config(value):
+    if value is not None and not isinstance(value, dict):
+        raise ValidationError(
+            "sdk_config must be a JSON object (dict), not %(type)s.",
+            params={"type": type(value).__name__},
+        )
+
+
 class RootTeamQuerySet(models.QuerySet):
     def filter(self, *args, **kwargs):
         from django.db.models import Q, Subquery
