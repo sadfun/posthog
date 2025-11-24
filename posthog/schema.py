@@ -65,6 +65,16 @@ class AlertState(StrEnum):
     SNOOZED = "Snoozed"
 
 
+class ArtifactContentType(StrEnum):
+    VISUALIZATION = "visualization"
+    NOTEBOOK = "notebook"
+
+
+class ArtifactSource(StrEnum):
+    ARTIFACT = "artifact"
+    INSIGHT = "insight"
+
+
 class AssistantArrayPropertyFilterOperator(StrEnum):
     EXACT = "exact"
     IS_NOT = "is_not"
@@ -192,6 +202,7 @@ class AssistantMessageType(StrEnum):
     AI_REASONING = "ai/reasoning"
     AI_VIZ = "ai/viz"
     AI_MULTI_VIZ = "ai/multi_viz"
+    AI_ARTIFACT = "ai/artifact"
     AI_FAILURE = "ai/failure"
     AI_NOTEBOOK = "ai/notebook"
     AI_PLANNING = "ai/planning"
@@ -3409,6 +3420,18 @@ class AlertCondition(BaseModel):
         extra="forbid",
     )
     type: AlertConditionType
+
+
+class ArtifactMessage(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    artifact_id: str = Field(..., description="The ID of the artifact (short_id for both drafts and saved insights)")
+    content_type: ArtifactContentType = Field(..., description="Type of artifact content")
+    id: Optional[str] = None
+    parent_tool_call_id: Optional[str] = None
+    source: ArtifactSource = Field(..., description="Source of artifact - determines which model to fetch from")
+    type: Literal["ai/artifact"] = "ai/artifact"
 
 
 class AssistantArrayPropertyFilter(BaseModel):
@@ -12293,15 +12316,6 @@ class VectorSearchQueryResponse(BaseModel):
     )
 
 
-class VisualizationArtifactContent(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    description: Optional[str] = None
-    name: Optional[str] = None
-    query: Union[AssistantTrendsQuery, AssistantFunnelsQuery, AssistantRetentionQuery, AssistantHogQLQuery]
-
-
 class WebAnalyticsAssistantFilters(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -12638,10 +12652,6 @@ class ActorsPropertyTaxonomyQuery(BaseModel):
     response: Optional[ActorsPropertyTaxonomyQueryResponse] = None
     tags: Optional[QueryLogTags] = None
     version: Optional[float] = Field(default=None, description="version of the node, used for schema migrations")
-
-
-class AgentArtifactContent(RootModel[Union[DocumentArtifactContent, VisualizationArtifactContent]]):
-    root: Union[DocumentArtifactContent, VisualizationArtifactContent]
 
 
 class AnyResponseType(
@@ -15404,6 +15414,40 @@ class QueryResponseAlternative(
     ]
 
 
+class VisualizationArtifactContent(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    description: Optional[str] = None
+    name: Optional[str] = None
+    query: Union[
+        Union[AssistantTrendsQuery, AssistantFunnelsQuery, AssistantRetentionQuery, AssistantHogQLQuery],
+        Union[
+            TrendsQuery,
+            FunnelsQuery,
+            RetentionQuery,
+            HogQLQuery,
+            RevenueAnalyticsGrossRevenueQuery,
+            RevenueAnalyticsMetricsQuery,
+            RevenueAnalyticsMRRQuery,
+            RevenueAnalyticsTopCustomersQuery,
+        ],
+    ]
+
+
+class VisualizationArtifactMessage(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    artifact_id: str = Field(..., description="The ID of the artifact (short_id for both drafts and saved insights)")
+    content: VisualizationArtifactContent
+    content_type: Literal["visualization"] = Field(default="visualization", description="Type of artifact content")
+    id: Optional[str] = None
+    parent_tool_call_id: Optional[str] = None
+    source: ArtifactSource = Field(..., description="Source of artifact - determines which model to fetch from")
+    type: Literal["ai/artifact"] = "ai/artifact"
+
+
 class VisualizationItem(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -15450,6 +15494,10 @@ class VisualizationMessage(BaseModel):
     query: Optional[str] = ""
     short_id: Optional[str] = None
     type: Literal["ai/viz"] = "ai/viz"
+
+
+class AgentArtifactContent(RootModel[Union[DocumentArtifactContent, VisualizationArtifactContent]]):
+    root: Union[DocumentArtifactContent, VisualizationArtifactContent]
 
 
 class DatabaseSchemaQueryResponse(BaseModel):
@@ -16670,6 +16718,7 @@ class RootAssistantMessage(
         Union[
             VisualizationMessage,
             MultiVisualizationMessage,
+            VisualizationArtifactMessage,
             ReasoningMessage,
             AssistantMessage,
             HumanMessage,
@@ -16684,6 +16733,7 @@ class RootAssistantMessage(
     root: Union[
         VisualizationMessage,
         MultiVisualizationMessage,
+        VisualizationArtifactMessage,
         ReasoningMessage,
         AssistantMessage,
         HumanMessage,
