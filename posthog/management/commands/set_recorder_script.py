@@ -70,11 +70,9 @@ class Command(BaseCommand):
                     if updated_count % 1000 == 0:
                         self.stdout.write(f"Updated {updated_count} teams so far...")
 
+        percentage = (sampled_count / total_teams * 100) if total_teams > 0 else 0
         self.stdout.write(
-            self.style.SUCCESS(
-                f"Sampled {sampled_count} teams ({sampled_count / total_teams * 100:.1f}%) "
-                f"using sample rate {sample_rate}"
-            )
+            self.style.SUCCESS(f"Sampled {sampled_count} teams ({percentage:.1f}%) " f"using sample rate {sample_rate}")
         )
 
         if dry_run:
