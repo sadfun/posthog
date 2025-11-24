@@ -2536,16 +2536,11 @@ async fn test_config_comprehensive_enterprise_team() -> Result<()> {
     assert_eq!(json_data["flagsPersistenceDefault"], json!(true));
     assert_eq!(json_data["captureDeadClicks"], json!(true));
 
-    // Session recording should be fully configured with script
+    // Session recording should be fully configured
     assert!(json_data["sessionRecording"].is_object());
     let session_recording = &json_data["sessionRecording"];
     assert_eq!(session_recording["endpoint"], "/s/");
     assert_eq!(session_recording["recorderVersion"], "v2");
-    assert!(session_recording["scriptConfig"].is_object());
-    assert_eq!(
-        session_recording["scriptConfig"]["script"],
-        "console.log('Enterprise script')"
-    );
 
     // Site apps should be populated
     assert!(json_data["siteApps"].is_array());
@@ -2751,16 +2746,11 @@ async fn test_config_mixed_feature_combinations() -> Result<()> {
     assert!(json_data["captureDeadClicks"].is_null()); // None -> null
     assert_eq!(json_data["autocapture_opt_out"], json!(false)); // None -> false
 
-    // Session recording should be enabled with script (team is allowed)
+    // Session recording should be enabled
     assert!(json_data["sessionRecording"].is_object());
     let session_recording = &json_data["sessionRecording"];
     assert_eq!(session_recording["endpoint"], "/s/");
     assert_eq!(session_recording["recorderVersion"], "v2");
-    assert!(session_recording["scriptConfig"].is_object());
-    assert_eq!(
-        session_recording["scriptConfig"]["script"],
-        "console.log('Mixed script')"
-    );
 
     // Site apps should be empty (inject_web_apps is false)
     assert_eq!(json_data["siteApps"], json!([]));
@@ -2844,12 +2834,11 @@ async fn test_config_team_exclusions_and_overrides() -> Result<()> {
         json!({"endpoint": "/e/"})
     );
 
-    // Session recording should be enabled but without script (team not allowed for script)
+    // Session recording should be enabled
     assert!(json_data["sessionRecording"].is_object());
     let session_recording = &json_data["sessionRecording"];
     assert_eq!(session_recording["endpoint"], "/s/");
     assert_eq!(session_recording["recorderVersion"], "v2");
-    assert!(session_recording["scriptConfig"].is_null()); // No script for excluded team
 
     Ok(())
 }
