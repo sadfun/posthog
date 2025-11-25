@@ -2940,6 +2940,7 @@ const api = {
             limit,
             offset,
             enabled,
+            order,
         }: {
             filter_groups?: CyclotronJobFiltersType[]
             search?: string
@@ -2947,6 +2948,7 @@ const api = {
             limit?: number
             offset?: number
             enabled?: boolean
+            order?: string
         }): Promise<CountedPaginatedResponse<HogFunctionType>> {
             return await new ApiRequest()
                 .hogFunctions()
@@ -2957,6 +2959,7 @@ const api = {
                     ...(limit ? { limit } : {}),
                     ...(offset ? { offset } : {}),
                     ...(enabled !== undefined ? { enabled } : {}),
+                    ...(order ? { order } : {}),
                 })
                 .get()
         },
