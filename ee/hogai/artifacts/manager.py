@@ -7,6 +7,7 @@ from langchain_core.runnables import RunnableConfig
 from posthog.schema import (
     ArtifactContentType,
     ArtifactSource,
+    AssistantMessage,
     VisualizationArtifactContent,
     VisualizationArtifactMessage,
     VisualizationMessage,
@@ -17,6 +18,7 @@ from posthog.models.team import Team
 
 from ee.hogai.core.mixins import AssistantContextMixin
 from ee.hogai.utils.types.base import AnyAssistantSupportedQuery, ArtifactMessage, AssistantMessageUnion
+from ee.models import Conversation
 from ee.models.assistant import AgentArtifact
 
 
@@ -166,6 +168,22 @@ class ArtifactManager(AssistantContextMixin):
                 result.append(message)
 
         return result
+
+    async def aget_subagent_artifacts(self, messages: Sequence[AssistantMessageUnion]) -> list[AgentArtifact]:
+        """Get all subagent artifacts."""
+        tool_call_ids = []
+        for message in messages:
+            if isinstance(message, AssistantMessage) and message.tool_calls:
+                subagent_tool_calls = [tool_call for tool_call in message.tool_calls if tool_call.name == "subagent"]
+                tool_call_ids.extend([tool_call.id for tool_call in subagent_tool_calls])
+        if not tool_call_ids:
+            return []
+        artifacts = AgentArtifact.objects.filter(
+            team=self._team,
+            conversation__type=Conversation.Type.TOOL_CALL,
+            conversation__tool_call_id__in=tool_call_ids,
+        )
+        return [artifact async for artifact in artifacts]
 
     # -------------------------------------------------------------------------
     # Private helpers
