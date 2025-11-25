@@ -310,6 +310,7 @@ class AssistantTool(StrEnum):
     SWITCH_MODE = "switch_mode"
     SUMMARIZE_SESSIONS = "summarize_sessions"
     CREATE_INSIGHT = "create_insight"
+    SUBAGENT = "subagent"
 
 
 class AssistantToolCall(BaseModel):

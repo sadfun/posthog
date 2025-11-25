@@ -18,6 +18,7 @@ from posthog.schema import (
 from posthog.models import Team, User
 
 from ee.hogai.context import AssistantContextManager
+from ee.hogai.tools.subagent import SubagentTool
 from ee.hogai.tools.switch_mode import SwitchModeTool
 from ee.hogai.tools.todo_write import TodoWriteTool
 from ee.hogai.utils.types.base import AssistantState
@@ -129,6 +130,18 @@ class AgentToolkitManager:
                         default_tool_classes=toolkit.tools,
                     )
                     static_tools.append(switch_mode_future)
+                elif tool_class == SubagentTool:
+                    if toolkit_class is self._mode_toolkit:
+                        raise ValueError("SubagentTool is not allowed in the mode toolkit")
+                    subagent_future = SubagentTool.create_tool_class(
+                        team=self._team,
+                        user=self._user,
+                        state=state,
+                        config=config,
+                        context_manager=self._context_manager,
+                        mode_registry=self._mode_registry,
+                    )
+                    static_tools.append(subagent_future)
                 else:
                     tool_future = tool_class.create_tool_class(
                         team=self._team,

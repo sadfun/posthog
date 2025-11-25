@@ -6,6 +6,7 @@ from .read_data import ReadDataTool, ReadDataToolArgs
 from .read_taxonomy import ReadTaxonomyTool
 from .search import SearchTool, SearchToolArgs
 from .session_summarization import SessionSummarizationTool, SessionSummarizationToolArgs
+from .subagent import SubagentTool, SubagentToolArgs
 from .switch_mode import SwitchModeTool
 from .todo_write import TodoWriteTool, TodoWriteToolArgs
 
@@ -21,6 +22,8 @@ __all__ = [
     "SearchToolArgs",
     "SessionSummarizationTool",
     "SessionSummarizationToolArgs",
+    "SubagentTool",
+    "SubagentToolArgs",
     "TodoWriteTool",
     "TodoWriteToolArgs",
     "ExecuteSQLTool",

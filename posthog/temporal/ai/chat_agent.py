@@ -3,19 +3,19 @@ import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import structlog
 from temporalio import activity, workflow
 from temporalio.common import RetryPolicy
 
-from posthog.schema import HumanMessage, MaxBillingContext
+from posthog.schema import AssistantMessage, HumanMessage, MaxBillingContext
 
 from posthog.models import Team, User
 from posthog.temporal.ai.base import AgentBaseWorkflow
 
 from ee.hogai.chat_agent.runner import ChatAgentRunner
-from ee.hogai.stream.redis_stream import ConversationRedisStream, get_conversation_stream_key
+from ee.hogai.stream.redis_stream import ConversationRedisStream, get_conversation_stream_key, get_subagent_stream_key
 from ee.hogai.utils.types import AssistantMode
 from ee.models import Conversation
 
@@ -28,6 +28,9 @@ CHAT_AGENT_ACTIVITY_RETRY_INTERVAL = 1  # 1 second
 CHAT_AGENT_ACTIVITY_RETRY_MAX_INTERVAL = 30 * 60  # 30 minutes
 CHAT_AGENT_ACTIVITY_RETRY_MAX_ATTEMPTS = 3
 CHAT_AGENT_ACTIVITY_HEARTBEAT_TIMEOUT = 5 * 60  # 5 minutes
+
+SUBAGENT_WORKFLOW_TIMEOUT = 10 * 60  # 10 minutes
+SUBAGENT_ACTIVITY_HEARTBEAT_TIMEOUT = 2 * 60  # 2 minutes
 
 
 @dataclass
@@ -104,3 +107,90 @@ async def process_conversation_activity(inputs: AssistantConversationRunnerWorkf
     redis_stream = ConversationRedisStream(stream_key)
 
     await redis_stream.write_to_stream(assistant.astream(), activity.heartbeat)
+
+
+@dataclass
+class SubagentWorkflowInputs:
+    """Inputs for the subagent workflow."""
+
+    team_id: int
+    user_id: int
+    conversation_id: UUID
+    tool_call_id: str
+    task: str
+    trace_id: Optional[str] = None
+    session_id: Optional[str] = None
+    billing_context: Optional[MaxBillingContext] = None
+
+
+@workflow.defn(name="subagent-processing")
+class SubagentWorkflow(AgentBaseWorkflow):
+    """Temporal workflow for processing subagent activities."""
+
+    @staticmethod
+    def parse_inputs(inputs: list[str]) -> SubagentWorkflowInputs:
+        """Parse inputs from the management command CLI."""
+        loaded = json.loads(inputs[0])
+        return SubagentWorkflowInputs(**loaded)
+
+    @workflow.run
+    async def run(self, inputs: SubagentWorkflowInputs) -> None:
+        """Execute the subagent workflow."""
+        await workflow.execute_activity(
+            process_subagent_activity,
+            inputs,
+            start_to_close_timeout=timedelta(seconds=SUBAGENT_WORKFLOW_TIMEOUT),
+            retry_policy=RetryPolicy(
+                initial_interval=timedelta(seconds=CHAT_AGENT_ACTIVITY_RETRY_INTERVAL),
+                maximum_interval=timedelta(seconds=CHAT_AGENT_ACTIVITY_RETRY_MAX_INTERVAL),
+                maximum_attempts=CHAT_AGENT_ACTIVITY_RETRY_MAX_ATTEMPTS,
+            ),
+            heartbeat_timeout=timedelta(seconds=SUBAGENT_ACTIVITY_HEARTBEAT_TIMEOUT),
+        )
+
+
+@activity.defn
+async def process_subagent_activity(inputs: SubagentWorkflowInputs) -> str:
+    """Process a subagent task and stream results to Redis.
+
+    Args:
+        inputs: Temporal workflow inputs
+
+    Returns:
+        The final message content from the subagent
+    """
+    team, user, conversation = await asyncio.gather(
+        Team.objects.aget(id=inputs.team_id),
+        User.objects.aget(id=inputs.user_id),
+        Conversation.objects.aget(id=inputs.conversation_id),
+    )
+
+    human_message = HumanMessage(content=inputs.task, id=str(uuid4()))
+
+    assistant = ChatAgentRunner(
+        team,
+        conversation,
+        new_message=human_message,
+        user=user,
+        is_new_conversation=False,
+        trace_id=inputs.trace_id,
+        session_id=inputs.session_id,
+        billing_context=inputs.billing_context,
+    )
+
+    stream_key = get_subagent_stream_key(inputs.conversation_id, inputs.tool_call_id)
+    redis_stream = ConversationRedisStream(stream_key)
+
+    final_content = ""
+
+    async def stream_with_capture():
+        nonlocal final_content
+        async for event in assistant.astream():
+            event_type, message = event
+            if event_type.value == "message" and isinstance(message, AssistantMessage):
+                final_content = message.content
+            yield event
+
+    await redis_stream.write_to_stream(stream_with_capture(), activity.heartbeat)
+
+    return final_content

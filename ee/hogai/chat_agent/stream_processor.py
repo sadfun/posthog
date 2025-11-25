@@ -9,6 +9,7 @@ from posthog.schema import (
     AssistantUpdateEvent,
     FailureMessage,
     NotebookUpdateMessage,
+    VisualizationArtifactMessage,
 )
 
 from posthog.models import Team, User
@@ -227,7 +228,7 @@ class ChatAgentStreamProcessor(AssistantStreamProcessorProtocol, Generic[StateTy
         These messages are returned as-is regardless of where in the nesting hierarchy they are.
         """
         # These message types are always returned as-is
-        if isinstance(message, NotebookUpdateMessage | FailureMessage):
+        if isinstance(message, NotebookUpdateMessage | FailureMessage | VisualizationArtifactMessage):
             return message
 
         return None

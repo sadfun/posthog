@@ -27,6 +27,8 @@ import {
 import { isFunnelsQuery, isHogQLQuery, isRetentionQuery, isTrendsQuery } from '~/queries/utils'
 import { ActionType, DashboardType, EventDefinition, QueryBasedInsightModel } from '~/types'
 
+import { EnhancedToolCall } from './Thread'
+import { ToolRegistration, getToolDefinitionFromToolCall } from './max-constants'
 import { SuggestionGroup } from './maxLogic'
 import { MaxActionContext, MaxContextType, MaxDashboardContext, MaxEventContext, MaxInsightContext } from './maxTypes'
 
@@ -199,4 +201,22 @@ export const createSuggestionGroup = (label: string, icon: JSX.Element, suggesti
         icon,
         suggestions: suggestions.map((content) => ({ content })),
     }
+}
+
+export const getToolCallTextContent = (
+    toolCall: EnhancedToolCall,
+    registeredToolMap: Record<string, ToolRegistration>
+): string => {
+    const commentary = toolCall.args.commentary as string
+    const definition = getToolDefinitionFromToolCall(toolCall)
+    let description = `Executing ${toolCall.name}`
+    if (definition) {
+        if (definition.displayFormatter) {
+            description = definition.displayFormatter(toolCall, { registeredToolMap })
+        }
+        if (commentary) {
+            description = commentary
+        }
+    }
+    return description
 }

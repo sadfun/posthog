@@ -10,6 +10,8 @@ from posthog.models import Team, User
 
 from ee.hogai.context import AssistantContextManager
 from ee.hogai.tool import MaxTool
+from ee.hogai.tools.subagent import SubagentTool
+from ee.hogai.utils.feature_flags import has_subagent_tool_feature_flag
 from ee.hogai.utils.prompt import format_prompt_string
 from ee.hogai.utils.types.base import AssistantState, NodePath
 
@@ -100,10 +102,14 @@ async def _get_default_tools_prompt(
         *[
             tool_class.create_tool_class(team=team, user=user, state=state, config=config)
             for tool_class in default_tool_classes
-            if tool_class != SwitchModeTool
+            if tool_class not in [SwitchModeTool, SubagentTool]
         ]
     )
-    return ", ".join([tool.get_name() for tool in resolved_tools]) + ", switch_mode"
+    prompt = ", ".join([tool.get_name() for tool in resolved_tools])
+    if has_subagent_tool_feature_flag(team, user):
+        prompt += ", subagent"
+    prompt += ", switch_mode"
+    return prompt
 
 
 SwitchModeToolType = Literal["switch_mode"]

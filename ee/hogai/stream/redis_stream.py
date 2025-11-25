@@ -101,6 +101,11 @@ def get_conversation_stream_key(conversation_id: UUID) -> str:
     return f"{CONVERSATION_STREAM_PREFIX}{conversation_id}"
 
 
+def get_subagent_stream_key(conversation_id: UUID, tool_call_id: str) -> str:
+    """Get the Redis stream key for a subagent tool execution."""
+    return f"{CONVERSATION_STREAM_PREFIX}{conversation_id}:{tool_call_id}"
+
+
 class ConversationStreamSerializer:
     serialization_key = "data"
 

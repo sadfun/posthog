@@ -44,6 +44,7 @@ class Conversation(UUIDTModel):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.IDLE)
     type = models.CharField(max_length=20, choices=Type.choices, default=Type.ASSISTANT)
     title = models.CharField(null=True, blank=True, help_text="Title of the conversation.", max_length=TITLE_MAX_LENGTH)
+    tool_call_id = models.CharField(max_length=255, null=True, blank=True)
 
 
 class ConversationCheckpoint(UUIDTModel):

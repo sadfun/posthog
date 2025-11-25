@@ -1,6 +1,16 @@
-import { IconAtSign, IconBook, IconCreditCard, IconDocument, IconMemory, IconSearch, IconShuffle } from '@posthog/icons'
+import {
+    IconAtSign,
+    IconBook,
+    IconCheckbox,
+    IconCreditCard,
+    IconDocument,
+    IconMemory,
+    IconSearch,
+    IconShuffle,
+} from '@posthog/icons'
 
 import { FEATURE_FLAGS } from 'lib/constants'
+import { IconRobot } from 'lib/lemon-ui/icons'
 import { Scene } from 'scenes/sceneTypes'
 
 import { iconForType } from '~/layout/panel-layout/ProjectTree/defaultTree'
@@ -82,7 +92,30 @@ export interface ModeDefinition {
     name: string
 }
 
-export const TOOL_DEFINITIONS: Record<Exclude<AssistantTool, 'todo_write'>, ToolDefinition> = {
+export const TOOL_DEFINITIONS: Record<AssistantTool, ToolDefinition> = {
+    todo_write: {
+        name: 'Write a todo',
+        description: 'Write a todo to remember a task',
+        icon: <IconCheckbox />,
+        displayFormatter: (toolCall) => {
+            if (toolCall.status === 'completed') {
+                return `Update the to-do list`
+            }
+            return `Updating the to-do list...`
+        },
+    },
+    subagent: {
+        name: 'Run a subagent',
+        description: 'Run a subagent to perform a task',
+        icon: <IconRobot />,
+        displayFormatter: (toolCall) => {
+            const title = toolCall.args.title
+            if (toolCall.status === 'completed') {
+                return `Task (${title})`
+            }
+            return `Running a task (${title})...`
+        },
+    },
     session_summarization: {
         name: 'Summarize sessions',
         description: 'Summarize sessions to analyze real user behavior',

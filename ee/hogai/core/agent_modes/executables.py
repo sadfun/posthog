@@ -29,7 +29,6 @@ from posthog.schema import (
 from posthog.event_usage import groups
 from posthog.models import Team, User
 
-from ee.hogai.core.agent_modes.feature_flags import has_agent_modes_feature_flag
 from ee.hogai.core.agent_modes.prompt_builder import AgentPromptBuilder
 from ee.hogai.core.agent_modes.prompts import (
     ROOT_CONVERSATION_SUMMARY_PROMPT,
@@ -43,6 +42,7 @@ from ee.hogai.tool import MaxTool, ToolMessagesArtifact
 from ee.hogai.tool_errors import MaxToolError
 from ee.hogai.utils.anthropic import add_cache_control, convert_to_anthropic_messages
 from ee.hogai.utils.conversation_summarizer import AnthropicConversationSummarizer
+from ee.hogai.utils.feature_flags import has_agent_modes_feature_flag
 from ee.hogai.utils.helpers import convert_tool_messages_to_dict, normalize_ai_message
 from ee.hogai.utils.types import (
     AssistantMessageUnion,

@@ -699,6 +699,7 @@ function AssistantActionComponent({
     icon,
     animate = true,
     showCompletionIcon = true,
+    registeredToolMap = {},
 }: {
     id: string
     content: string
@@ -707,6 +708,7 @@ function AssistantActionComponent({
     icon?: React.ReactNode
     animate?: boolean
     showCompletionIcon?: boolean
+    registeredToolMap?: Record<string, ToolRegistration>
 }): JSX.Element {
     const isPending = state === 'pending'
     const isCompleted = state === 'completed'
@@ -775,6 +777,12 @@ function AssistantActionComponent({
                         const isCurrentSubstep = substepIndex === substeps.length - 1
                         const isCompletedSubstep = substepIndex < substeps.length - 1 || isCompleted
 
+                        let description = substep
+                        if (substep.startsWith('tool_call::')) {
+                            const toolCall = JSON.parse(substep.replace('tool_call::', '')) as EnhancedToolCall
+                            description = getToolCallTextContent(toolCall, registeredToolMap)
+                        }
+
                         return (
                             <div
                                 key={substepIndex}
@@ -791,7 +799,7 @@ function AssistantActionComponent({
                                         !isFailed && isCompletedSubstep && 'text-muted',
                                         !isFailed && isCurrentSubstep && !isCompleted && 'text-secondary'
                                     )}
-                                    content={handleThreeDots(substep ?? '', true)}
+                                    content={handleThreeDots(description ?? '', true)}
                                 />
                             </div>
                         )
@@ -860,18 +868,9 @@ function ToolCallsAnswer({ toolCalls, registeredToolMap }: ToolCallsAnswerProps)
             {regularToolCalls.length > 0 && (
                 <div className="flex flex-col gap-1.5">
                     {regularToolCalls.map((toolCall) => {
-                        const commentary = toolCall.args.commentary as string
                         const updates = toolCall.updates ?? []
                         const definition = getToolDefinitionFromToolCall(toolCall)
-                        let description = `Executing ${toolCall.name}`
-                        if (definition) {
-                            if (definition.displayFormatter) {
-                                description = definition.displayFormatter(toolCall, { registeredToolMap })
-                            }
-                            if (commentary) {
-                                description = commentary
-                            }
-                        }
+                        const description = getToolCallTextContent(toolCall, registeredToolMap)
                         return (
                             <AssistantActionComponent
                                 key={toolCall.id}
@@ -881,6 +880,7 @@ function ToolCallsAnswer({ toolCalls, registeredToolMap }: ToolCallsAnswerProps)
                                 state={toolCall.status}
                                 icon={definition?.icon || <IconWrench />}
                                 showCompletionIcon={true}
+                                registeredToolMap={registeredToolMap}
                             />
                         )
                     })}
