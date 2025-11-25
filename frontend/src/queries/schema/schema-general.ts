@@ -2778,6 +2778,8 @@ export type InsightQueryNode =
     | WebStatsTableQuery
     | WebOverviewQuery
 
+export type ProductAnalyticsInsightQueryNode = Exclude<InsightQueryNode, WebStatsTableQuery | WebOverviewQuery>
+
 export interface ExperimentVariantTrendsBaseStats {
     key: string
     count: number
