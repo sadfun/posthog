@@ -6,20 +6,20 @@ from posthog.schema import (
 from posthog.temporal.data_imports.pipelines.pipeline.typings import SourceInputs, SourceResponse
 from posthog.temporal.data_imports.sources.common.registry import SourceRegistry
 from posthog.temporal.data_imports.sources.common.schema import SourceSchema
-from posthog.temporal.data_imports.sources.generated_configs import SupabaseSourceConfig
+from posthog.temporal.data_imports.sources.generated_configs import PostgresSourceConfig, SupabaseSourceConfig
 from posthog.temporal.data_imports.sources.postgres.source import PostgresSource
 
 from products.data_warehouse.backend.types import ExternalDataSourceType
 
 
 @SourceRegistry.register
-class SupabaseSource(PostgresSource):  # type: ignore
+class SupabaseSource(PostgresSource):
     def __init__(self):
         super().__init__(source_name="Supabase")
 
     @property
     def source_type(self) -> ExternalDataSourceType:
-        return ExternalDataSourceType.SUPABASE  # type: ignore
+        return ExternalDataSourceType.SUPABASE
 
     @property
     def get_source_config(self) -> SourceConfig:
@@ -33,11 +33,17 @@ class SupabaseSource(PostgresSource):  # type: ignore
             featureFlag="supabase-dwh",
         )
 
-    def validate_credentials(self, config: SupabaseSourceConfig, team_id: int) -> tuple[bool, str | None]:
-        return super().validate_credentials(config, team_id)
+    def _postgres_source_config(self, config: SupabaseSourceConfig) -> PostgresSourceConfig:
+        return PostgresSourceConfig(**config.__dict__)
 
-    def get_schemas(self, config: SupabaseSourceConfig, team_id: int, with_counts: bool = False) -> list[SourceSchema]:
-        return super().get_schemas(config, team_id, with_counts)
+    def validate_credentials(self, config: SupabaseSourceConfig, team_id: int) -> tuple[bool, str | None]:  # type: ignore[override]
+        pg_config = self._postgres_source_config(config)
+        return super().validate_credentials(pg_config, team_id)
 
-    def source_for_pipeline(self, config: SupabaseSourceConfig, inputs: SourceInputs) -> SourceResponse:
-        return super().source_for_pipeline(config, inputs)
+    def get_schemas(self, config: SupabaseSourceConfig, team_id: int, with_counts: bool = False) -> list[SourceSchema]:  # type: ignore[override]
+        pg_config = self._postgres_source_config(config)
+        return super().get_schemas(pg_config, team_id, with_counts)
+
+    def source_for_pipeline(self, config: SupabaseSourceConfig, inputs: SourceInputs) -> SourceResponse:  # type: ignore[override]
+        pg_config = self._postgres_source_config(config)
+        return super().source_for_pipeline(pg_config, inputs)

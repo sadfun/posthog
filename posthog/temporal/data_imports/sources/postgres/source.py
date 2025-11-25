@@ -44,7 +44,7 @@ class PostgresSource(SimpleSource[PostgresSourceConfig], SSHTunnelMixin, Validat
 
     @property
     def source_type(self) -> ExternalDataSourceType:
-        return ExternalDataSourceType.POSTGRES  # type: ignore
+        return ExternalDataSourceType.POSTGRES
 
     @property
     def get_source_config(self) -> SourceConfig:
