@@ -89,6 +89,7 @@ def create_organization_with_team(data: PlaywrightWorkspaceSetupData) -> Playwri
     api_key._value = api_key_value  # type: ignore
 
     return PlaywrightWorkspaceSetupResult(
+        api_token=team.api_token,
         organization_id=str(organization.id),
         team_id=str(team.id),
         organization_name=organization.name,

@@ -2305,6 +2305,7 @@ class PlaywrightWorkspaceSetupResult(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    api_token: str
     organization_id: str
     organization_name: str
     personal_api_key: str

@@ -4471,6 +4471,7 @@ export interface PlaywrightWorkspaceSetupData {
 }
 
 export interface PlaywrightWorkspaceSetupResult {
+    api_token: string
     organization_id: string
     team_id: string
     organization_name: string

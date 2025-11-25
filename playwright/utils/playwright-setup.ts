@@ -105,7 +105,7 @@ export class PlaywrightSetup {
         const workspace = result.result as PlaywrightWorkspaceSetupResult
 
         // Validate required fields (using snake_case field names from schema)
-        const requiredFields = ['organization_id', 'team_id', 'personal_api_key'] as const
+        const requiredFields = ['organization_id', 'team_id', 'personal_api_key', 'api_token'] as const
         const missingFields = requiredFields.filter((field) => !workspace[field])
 
         if (missingFields.length > 0) {
