@@ -298,6 +298,7 @@ class AssistantTool(StrEnum):
     SWITCH_MODE = "switch_mode"
     SUMMARIZE_SESSIONS = "summarize_sessions"
     CREATE_INSIGHT = "create_insight"
+    CREATE_FORM = "create_form"
 
 
 class AssistantToolCall(BaseModel):
@@ -2118,6 +2119,13 @@ class MinimalHedgehogConfig(BaseModel):
     accessories: list[str]
     color: Optional[HedgehogColorOptions] = None
     use_as_profile: bool
+
+
+class MultiQuestionFormQuestionOption(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    value: str = Field(..., description="The value to use when this option is selected")
 
 
 class MultipleBreakdownType(StrEnum):
@@ -4671,6 +4679,18 @@ class MaxExperimentSummaryContext(BaseModel):
     secondary_metrics_results: list[MaxExperimentMetricResult]
     stats_method: ExperimentStatsMethod
     variants: list[str]
+
+
+class MultiQuestionFormQuestion(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    allow_custom_answer: Optional[bool] = Field(
+        default=None, description='Whether to show a "Type your answer" option (default: true)'
+    )
+    id: str = Field(..., description="Unique identifier for this question")
+    options: list[MultiQuestionFormQuestionOption] = Field(..., description="Available answer options")
+    question: str = Field(..., description="The question text to display")
 
 
 class NotebookUpdateMessage(BaseModel):
@@ -10114,6 +10134,13 @@ class MaxBillingContext(BaseModel):
     total_current_amount_usd: Optional[str] = None
     trial: Optional[MaxBillingContextTrial] = None
     usage_history: Optional[list[UsageHistoryItem]] = None
+
+
+class MultiQuestionForm(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    questions: list[MultiQuestionFormQuestion] = Field(..., description="The questions to ask")
 
 
 class MultipleBreakdownOptions(BaseModel):

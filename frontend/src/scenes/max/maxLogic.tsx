@@ -87,7 +87,7 @@ export const maxLogic = kea<maxLogicType>([
 
     actions({
         setQuestion: (question: string) => ({ question }), // update the form input
-        askMax: (prompt: string | null) => ({ prompt }), // used by maxThreadLogic to start a conversation
+        askMax: (prompt: string | null, addToThread: boolean = true) => ({ prompt, addToThread }), // used by maxThreadLogic to start a conversation
         scrollThreadToBottom: (behavior?: 'instant' | 'smooth') => ({ behavior }),
         openConversation: (conversationId: string) => ({ conversationId }),
         setConversationId: (conversationId: string) => ({ conversationId }),

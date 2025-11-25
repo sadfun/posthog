@@ -51,7 +51,13 @@ import { maxLogic } from './maxLogic'
 import type { maxThreadLogicType } from './maxThreadLogicType'
 import { RENDERABLE_UI_PAYLOAD_TOOLS } from './messages/UIPayloadAnswer'
 import { MAX_SLASH_COMMANDS, SlashCommand } from './slash-commands'
-import { isAssistantMessage, isAssistantToolCallMessage, isHumanMessage, isNotebookUpdateMessage } from './utils'
+import {
+    isAssistantMessage,
+    isAssistantToolCallMessage,
+    isHumanMessage,
+    isNotebookUpdateMessage,
+    threadEndsWithMultiQuestionForm,
+} from './utils'
 import { getRandomThinkingMessage } from './utils/thinkingMessages'
 
 export type MessageStatus = 'loading' | 'completed' | 'error'
@@ -143,8 +149,9 @@ export const maxThreadLogic = kea<maxThreadLogicType>([
                 contextual_tools?: Record<string, any>
                 ui_context?: any
             },
-            generationAttempt: number
-        ) => ({ streamData, generationAttempt }),
+            generationAttempt: number,
+            addToThread: boolean = true
+        ) => ({ streamData, generationAttempt, addToThread }),
         stopGeneration: true,
         completeThreadGeneration: true,
         addMessage: (message: ThreadMessage) => ({ message }),
@@ -269,13 +276,13 @@ export const maxThreadLogic = kea<maxThreadLogicType>([
     })),
 
     listeners((logic) => ({
-        streamConversation: async ({ streamData, generationAttempt }, breakpoint) => {
+        streamConversation: async ({ streamData, generationAttempt, addToThread = true }, breakpoint) => {
             const { actions, values, cache, mount, props } = logic as BuiltLogic<maxThreadLogicType>
             // Set active streaming threads, so we know streaming is active
             const releaseStreamingLock = mount() // lock the logic - don't unmount before we're done streaming
             actions.incrActiveStreamingThreads()
 
-            if (generationAttempt === 0 && streamData.content) {
+            if (generationAttempt === 0 && streamData.content && addToThread) {
                 const message: ThreadMessage = {
                     type: AssistantMessageType.Human,
                     content: streamData.content,
@@ -434,7 +441,7 @@ export const maxThreadLogic = kea<maxThreadLogicType>([
         },
     })),
     listeners(({ actions, values, cache }) => ({
-        askMax: async ({ prompt }) => {
+        askMax: async ({ prompt, addToThread = true }) => {
             if (!values.dataProcessingAccepted) {
                 return // Skip - this will be re-fired by the `onApprove` on `AIConsentPopoverWrapper`
             }
@@ -462,7 +469,8 @@ export const maxThreadLogic = kea<maxThreadLogicType>([
                     ui_context: values.compiledContext || undefined,
                     conversation: values.conversation?.id || values.conversationId,
                 },
-                0
+                0,
+                addToThread
             )
         },
         stopGeneration: async () => {
@@ -687,18 +695,38 @@ export const maxThreadLogic = kea<maxThreadLogicType>([
             },
         ],
 
+        multiQuestionFormPending: [
+            (s) => [s.threadRaw],
+            (threadRaw) => {
+                return threadEndsWithMultiQuestionForm(threadRaw)
+            },
+        ],
+
         inputDisabled: [
-            (s) => [s.formPending, s.threadLoading, s.dataProcessingAccepted, s.isSharedThread],
-            (formPending, threadLoading, dataProcessingAccepted, isSharedThread) =>
+            (s) => [
+                s.formPending,
+                s.multiQuestionFormPending,
+                s.threadLoading,
+                s.dataProcessingAccepted,
+                s.isSharedThread,
+            ],
+            (formPending, multiQuestionFormPending, threadLoading, dataProcessingAccepted, isSharedThread) =>
                 // Input unavailable when:
                 // - Answer must be provided using a form returned by Max only
+                // - Answer must be provided using a multi-question form
                 // - We are awaiting user to approve or reject external AI processing data
-                isSharedThread || formPending || (threadLoading && !dataProcessingAccepted),
+                isSharedThread || formPending || multiQuestionFormPending || (threadLoading && !dataProcessingAccepted),
         ],
 
         submissionDisabledReason: [
-            (s) => [s.formPending, s.question, s.threadLoading, s.activeStreamingThreads],
-            (formPending, question, threadLoading, activeStreamingThreads): string | undefined => {
+            (s) => [s.formPending, s.multiQuestionFormPending, s.question, s.threadLoading, s.activeStreamingThreads],
+            (
+                formPending,
+                multiQuestionFormPending,
+                question,
+                threadLoading,
+                activeStreamingThreads
+            ): string | undefined => {
                 // Allow users to cancel the generation
                 if (threadLoading) {
                     return undefined
@@ -706,6 +734,10 @@ export const maxThreadLogic = kea<maxThreadLogicType>([
 
                 if (formPending) {
                     return 'Please choose one of the options above'
+                }
+
+                if (multiQuestionFormPending) {
+                    return 'Please answer the questions above'
                 }
 
                 if (!question) {

@@ -19,6 +19,7 @@ from posthog.schema import (
     AssistantEventType,
     AssistantGenerationStatusEvent,
     AssistantMessage,
+    AssistantToolCallMessage,
     AssistantUpdateEvent,
     FailureMessage,
     HumanMessage,
@@ -35,7 +36,7 @@ from posthog.utils import get_instance_region
 
 from ee.hogai.core.stream_processor import AssistantStreamProcessorProtocol
 from ee.hogai.utils.exceptions import GenerationCanceled
-from ee.hogai.utils.helpers import extract_stream_update
+from ee.hogai.utils.helpers import extract_stream_update, find_last_message_of_type
 from ee.hogai.utils.state import validate_state_update
 from ee.hogai.utils.types.base import (
     AssistantDispatcherEvent,
@@ -61,7 +62,7 @@ class BaseAgentRunner(ABC):
     _contextual_tools: dict[str, Any]
     _conversation: Conversation
     _session_id: Optional[str]
-    _latest_message: Optional[HumanMessage]
+    _latest_message: Optional[HumanMessage | AssistantToolCallMessage]
     _state: Optional[AssistantMaxGraphState]
     _callback_handlers: list[BaseCallbackHandler]
     _trace_id: Optional[str | UUID]
@@ -284,6 +285,9 @@ class BaseAgentRunner(ABC):
         saved_state = validate_state_update(snapshot.values, self._state_type)
         last_recorded_dt = saved_state.start_dt
 
+        if form_response_message := self._get_form_response_message(saved_state):
+            self._latest_message = form_response_message
+
         # Add existing ids to streamed messages, so we don't send the messages again.
         for message in saved_state.messages:
             if message.id is not None:
@@ -381,3 +385,59 @@ class BaseAgentRunner(ABC):
                 "$groups": event_usage.groups(team=self._team),
             },
         )
+
+    def _get_form_response_message(self, saved_state: AssistantMaxGraphState) -> AssistantToolCallMessage | None:
+        """
+        When resuming after a create_form tool call, update the tool call message
+        with the user's response content and parsed answers in ui_payload.
+        """
+        if not saved_state.messages or not self._latest_message:
+            return None
+
+        latest_state_message = saved_state.messages[-1]
+        if not isinstance(latest_state_message, AssistantToolCallMessage):
+            return None
+
+        last_assistant_message = find_last_message_of_type(saved_state.messages, AssistantMessage)
+        if not last_assistant_message or not last_assistant_message.tool_calls:
+            return None
+
+        create_form_tool_call = next(
+            (tc for tc in last_assistant_message.tool_calls if tc.name == "create_form"),
+            None,
+        )
+        if not create_form_tool_call or create_form_tool_call.id != latest_state_message.tool_call_id:
+            return None
+        # Parse the form response content to extract answers
+        answers = self._parse_form_response(
+            self._latest_message.content,
+            create_form_tool_call.args.get("questions", []),
+        )
+
+        return latest_state_message.model_copy(
+            update={
+                "content": self._latest_message.content,
+                "ui_payload": {"create_form": {"answers": answers}},
+            }
+        )
+
+    def _parse_form_response(self, content: str, questions: list[dict[str, Any]]) -> dict[str, str]:
+        """
+        Parse the form response content to extract answers.
+        The content format is: "Question 1: Answer 1\nQuestion 2: Answer 2"
+        Returns a dict mapping question IDs to their answers.
+        """
+        answers: dict[str, str] = {}
+
+        # Build a map of question text to question ID
+        question_text_to_id = {q.get("question", ""): q.get("id", "") for q in questions}
+
+        # Parse each line of the response
+        for line in content.split("\n"):
+            if ": " in line:
+                question_text, answer = line.split(": ", 1)
+                question_id = question_text_to_id.get(question_text)
+                if question_id:
+                    answers[question_id] = answer
+
+        return answers

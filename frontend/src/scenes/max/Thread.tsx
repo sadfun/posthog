@@ -58,6 +58,7 @@ import {
     AssistantToolCallMessage,
     TaskExecutionStatus as ExecutionStatus,
     FailureMessage,
+    MultiQuestionForm,
     MultiVisualizationMessage,
     NotebookUpdateMessage,
     PlanningStep,
@@ -76,6 +77,7 @@ import { maxGlobalLogic } from './maxGlobalLogic'
 import { MessageStatus, ThreadMessage, maxLogic } from './maxLogic'
 import { maxThreadLogic } from './maxThreadLogic'
 import { MessageTemplate } from './messages/MessageTemplate'
+import { MultiQuestionFormComponent } from './messages/MultiQuestionForm'
 import { UIPayloadAnswer } from './messages/UIPayloadAnswer'
 import { MAX_SLASH_COMMANDS } from './slash-commands'
 import {
@@ -85,6 +87,7 @@ import {
     isDeepResearchReportCompletion,
     isFailureMessage,
     isHumanMessage,
+    isMultiQuestionFormMessage,
     isMultiVisualizationMessage,
     isNotebookUpdateMessage,
     isVisualizationMessage,
@@ -121,6 +124,7 @@ export function Thread({ className }: { className?: string }): JSX.Element | nul
                         <Message
                             key={`${conversationId}-${index}`}
                             message={message}
+                            nextMessage={nextMessage}
                             isLastInGroup={isLastInGroup}
                             isFinal={index === threadGrouped.length - 1}
                             streamingActive={streamingActive}
@@ -169,12 +173,13 @@ export interface EnhancedToolCall extends AssistantToolCall {
 
 interface MessageProps {
     message: ThreadMessage
+    nextMessage?: ThreadMessage
     isLastInGroup: boolean
     isFinal: boolean
     streamingActive: boolean
 }
 
-function Message({ message, isLastInGroup, isFinal }: MessageProps): JSX.Element {
+function Message({ message, nextMessage, isLastInGroup, isFinal }: MessageProps): JSX.Element {
     const { editInsightToolRegistered, registeredToolMap } = useValues(maxGlobalLogic)
     const { activeTabId, activeSceneId } = useValues(sceneLogic)
     const { threadLoading, isSharedThread } = useValues(maxThreadLogic)
@@ -281,6 +286,32 @@ function Message({ message, isLastInGroup, isFinal }: MessageProps): JSX.Element
 
                         // Compute actions separately to render after tool calls
                         const retriable = !!(isLastInGroup && isFinal)
+                        // Check if message has a multi-question form
+                        const multiQuestionFormElement = isMultiQuestionFormMessage(message)
+                            ? (() => {
+                                  if (message.status !== 'completed') {
+                                      // Don't show streaming forms
+                                      return null
+                                  }
+                                  const form = message.tool_calls?.find((toolCall) => toolCall.name === 'create_form')
+                                      ?.args as unknown as MultiQuestionForm
+                                  // Extract saved answers from the next message's ui_payload if available
+                                  const savedAnswers =
+                                      isAssistantToolCallMessage(nextMessage) &&
+                                      nextMessage.ui_payload?.create_form?.answers
+                                          ? (nextMessage.ui_payload.create_form.answers as Record<string, string>)
+                                          : undefined
+                                  return (
+                                      <MultiQuestionFormComponent
+                                          key={`${key}-multi-form`}
+                                          form={form}
+                                          isFinal={isFinal}
+                                          savedAnswers={savedAnswers}
+                                      />
+                                  )
+                              })()
+                            : null
+
                         const actionsElement = (() => {
                             if (threadLoading) {
                                 return null
@@ -293,7 +324,10 @@ function Message({ message, isLastInGroup, isFinal }: MessageProps): JSX.Element
                             }
 
                             if (isLastInGroup) {
-                                // Message has been interrupted with a form
+                                if (isMultiQuestionFormMessage(message)) {
+                                    return null
+                                }
+                                // Message has been interrupted with quick replies
                                 if (message.meta?.form?.options && isFinal) {
                                     return <AssistantMessageForm key={`${key}-form`} form={message.meta.form} />
                                 }
@@ -310,6 +344,7 @@ function Message({ message, isLastInGroup, isFinal }: MessageProps): JSX.Element
                                 {thinkingElement}
                                 {textElement}
                                 {toolCallElements}
+                                {multiQuestionFormElement}
                                 {actionsElement}
                             </div>
                         )

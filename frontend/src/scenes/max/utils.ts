@@ -64,6 +64,29 @@ export function isNotebookUpdateMessage(
     return message?.type === AssistantMessageType.Notebook
 }
 
+export function isMultiQuestionFormMessage(
+    message: RootAssistantMessage | undefined | null
+): message is AssistantMessage & { tool_calls: EnhancedToolCall[] } {
+    return (
+        isAssistantMessage(message) &&
+        !!message.tool_calls &&
+        message.tool_calls.some((toolCall) => toolCall.name === 'create_form')
+    )
+}
+
+export function threadEndsWithMultiQuestionForm(messages: RootAssistantMessage[]): boolean {
+    const lastMessage = messages[messages.length - 1]
+    const secondToLastMessage = messages[messages.length - 2]
+
+    // Case 1: The form is waiting for user input (last message is AssistantToolCallMessage from create_form interrupt)
+    // Note: We check for ToolCall type directly since the initial interrupt message doesn't have ui_payload
+    if (lastMessage?.type === AssistantMessageType.ToolCall && isMultiQuestionFormMessage(secondToLastMessage)) {
+        return true
+    }
+
+    return false
+}
+
 export function castAssistantQuery(
     query: AnyAssistantGeneratedQuery | AnyAssistantSupportedQuery | null
 ): TrendsQuery | FunnelsQuery | RetentionQuery | HogQLQuery {
