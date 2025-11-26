@@ -22,7 +22,7 @@ export interface QuickFiltersSectionProps {
 export function QuickFiltersSection({ context }: QuickFiltersSectionProps): JSX.Element {
     const { quickFilters } = useValues(quickFiltersLogic({ context }))
     const { selectedQuickFilters } = useValues(quickFiltersSectionLogic({ context }))
-    const { setQuickFilterValue } = useActions(quickFiltersSectionLogic({ context }))
+    const { setQuickFilterValue, clearQuickFilter } = useActions(quickFiltersSectionLogic({ context }))
     const { openModal } = useActions(quickFiltersModalLogic({ context }))
 
     return (
@@ -38,7 +38,11 @@ export function QuickFiltersSection({ context }: QuickFiltersSectionProps): JSX.
                         value={selectedFilter?.value || null}
                         operator={selectedFilter?.operator || null}
                         onChange={(value, operator) => {
-                            setQuickFilterValue(filter.property_name, value, operator)
+                            if (value === null && operator === null) {
+                                clearQuickFilter(filter.property_name)
+                            } else {
+                                setQuickFilterValue(filter.property_name, value, operator)
+                            }
                         }}
                     />
                 )

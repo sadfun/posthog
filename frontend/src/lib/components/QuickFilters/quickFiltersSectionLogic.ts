@@ -40,27 +40,19 @@ export const quickFiltersSectionLogic = kea<quickFiltersSectionLogicType>([
         selectedQuickFilters: [
             {} as Record<string, SelectedQuickFilter>,
             {
-                setQuickFilterValue: (state, { propertyName, value, operator }) => {
-                    if (value === null && operator === null) {
-                        const newState = { ...state }
-                        delete newState[propertyName]
-                        return newState
-                    }
-                    return {
-                        ...state,
-                        [propertyName]: {
-                            propertyName,
-                            value,
-                            operator: operator || PropertyOperator.Exact,
-                        },
-                    }
-                },
+                setQuickFilterValue: (state, { propertyName, value, operator }) => ({
+                    ...state,
+                    [propertyName]: {
+                        propertyName,
+                        value,
+                        operator: operator || PropertyOperator.Exact,
+                    },
+                }),
                 clearQuickFilter: (state, { propertyName }) => {
                     const newState = { ...state }
                     delete newState[propertyName]
                     return newState
                 },
-                clearAllQuickFilters: () => ({}),
             },
         ],
     }),
