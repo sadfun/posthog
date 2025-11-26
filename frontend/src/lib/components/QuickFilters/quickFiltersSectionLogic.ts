@@ -33,8 +33,7 @@ export const quickFiltersSectionLogic = kea<quickFiltersSectionLogicType>([
             value,
             operator,
         }),
-        clearQuickFilter: (propertyName: string) => ({ propertyName }),
-        clearAllQuickFilters: true,
+        setQuickFilters: (quickFilters: Record<string, SelectedQuickFilter>) => ({ quickFilters }),
     }),
 
     reducers({
@@ -56,22 +55,15 @@ export const quickFiltersSectionLogic = kea<quickFiltersSectionLogicType>([
                         },
                     }
                 },
-                clearQuickFilter: (state, { propertyName }) => {
-                    const newState = { ...state }
-                    delete newState[propertyName]
-                    return newState
-                },
-                clearAllQuickFilters: () => ({}),
+                setQuickFilters: (state, { quickFilters }) => quickFilters,
             },
         ],
     }),
 
     listeners(({ actions, values }) => ({
         deleteFilter: ({ id }) => {
-            const deletedFilter = values.quickFilters.find((f) => f.id === id)
-            if (deletedFilter) {
-                actions.clearQuickFilter(deletedFilter.property_name)
-            }
+            const newFilters = [...values.quickFilters].filter((f) => f.id != id)
+            actions.setQuickFilters(newFilters)
         },
     })),
 ])

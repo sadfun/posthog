@@ -2,7 +2,7 @@ import equal from 'fast-deep-equal'
 import { actions, connect, kea, key, path, props, reducers, selectors } from 'kea'
 import { actionToUrl, router, urlToAction } from 'kea-router'
 
-import { quickFiltersSectionLogic } from 'lib/components/QuickFilters'
+import { SelectedQuickFilter, quickFiltersSectionLogic } from 'lib/components/QuickFilters'
 import { taxonomicFilterLogic } from 'lib/components/TaxonomicFilter/taxonomicFilterLogic'
 import { isUniversalGroupFilterLike } from 'lib/components/UniversalFilters/utils'
 import { Params } from 'scenes/sceneTypes'
@@ -83,7 +83,10 @@ export const issueFiltersLogic = kea<issueFiltersLogicType>([
     selectors({
         mergedFilterGroup: [
             (s) => [s.filterGroup, s.selectedQuickFilters],
-            (filterGroup: UniversalFiltersGroup, selectedQuickFilters: Record<string, any>): UniversalFiltersGroup => {
+            (
+                filterGroup: UniversalFiltersGroup,
+                selectedQuickFilters: Record<string, SelectedQuickFilter>
+            ): UniversalFiltersGroup => {
                 const firstValue = filterGroup.values[0]
                 const omnisearchFilters = (isUniversalGroupFilterLike(firstValue) ? firstValue.values : []) as any[]
 

@@ -36,7 +36,7 @@ export function QuickFilterForm({ context }: QuickFilterFormProps): JSX.Element 
                     <LemonInput
                         value={name}
                         onChange={setName}
-                        placeholder="e.g., Environment"
+                        placeholder="e.g. Environment"
                         disabled={quickFiltersLoading}
                         autoFocus
                     />
